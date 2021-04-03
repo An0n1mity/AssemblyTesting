@@ -15,9 +15,9 @@ j:
 
 _start:
 	lea array, %rcx
-	mov size_array, %rbx
+	mov size_array, %rdx
 	push %rcx 
-	push %rbx
+	push %rdx
 	call BubbleSort
 	add $8, %rsp
 	jmp exit
@@ -32,6 +32,7 @@ BubbleSort:
 	sub $16, %rsp
 
 	movq $0, -8(%rbp) #i = 0
+	mov 24(%rbp), %rsi
 	first_loop:
 		#for(int i = 0; i < n; i++)
 		movl -8(%rbp), %edi #edi = i
@@ -49,15 +50,13 @@ BubbleSort:
 			cmp %edx, %edi	
 			je second_loop_end
 			
-			#if(arr[j] > arr[j+1])
-			movl -16(%rbp), %edi #edi = j 
-			imul $4, %rdi
-			add %rdi, 24(%rbp) #decallage du pointeur
+			#if(arr[j] > arr[j+1]) 
 			movl 24(%rbp), %ecx 
 			movl (%ecx), %eax #%eax = arr[j]
 			addl $4, 24(%rbp)
 			movl 24(%rbp), %ecx
-			cmp (%ecx), %eax #cmp arr[i], arr[j+1]
+			movl (%ecx), %ebx
+			cmp %ebx, %eax #cmp arr[i], arr[j+1]
 			jg switch
 			jmp switch_end
 			switch:
@@ -67,10 +66,11 @@ BubbleSort:
 				movl 24(%rbp), %ecx
 				movl %ebx, (%ecx) #arr[j] = arr[j+1]  
 			switch_end:
-			incq -16(%rbp) #j++
+			incl -16(%rbp) #j++
 			jmp second_loop
 		second_loop_end:
-			incq -8(%rbp) #i++
+			incl -8(%rbp) #i++
+			mov %rsi, 24(%rbp)
 			jmp first_loop
 			
 	return:
