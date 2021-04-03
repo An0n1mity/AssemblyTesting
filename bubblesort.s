@@ -9,51 +9,75 @@ j:
 	.int 0
 
 .section .text
+.type BubbleSort, @function
 
 .globl _start
 
 _start:
+	lea array, %rcx
+	mov size_array, %rbx
+	push %rcx 
+	push %rbx
+	call BubbleSort
+	add $8, %rsp
+	jmp exit
+
+#Arguments : Adresse du tableau = 24(%rbp) , taille du tableau = 16(%rbp)
+#Variable Locales : i = -8(%rbp), j = -16(%rbp)
+#%rbx, %rax contiendra les valeurs du tableau
+#%rdi, %rdx les valeurs des variables locale
+BubbleSort:
+	pushq %rbp
+	movq %rsp, %rbp
+	sub $16, %rsp
+
+	movq $0, -8(%rbp) #i = 0
 	first_loop:
 		#for(int i = 0; i < n; i++)
-		movl i, %eax
-		movl size_array, %ebx
-		decl %ebx
-		cmpl %ebx, %eax
-		je exit 		
-		#for(int j = 0; j < size_array-i; j++)
-		movl $0, j
+		movl -8(%rbp), %edi #edi = i
+		movl 16(%rbp), %edx #edx = size
+		dec %edx #ebx = size - 1
+		cmp %edx, %edi 
+		je return 		
+		#for(int j = 0; j < size_array-i-1; j++)
+		movl $0, -16(%rbp) #j = 0 
 		second_loop:
-			movl j, %eax
-			movl size_array, %ebx
-			subl i, %ebx
-			decl %ebx
-			cmpl %ebx, %eax	
+			movl -16(%rbp), %edi #edi = j
+			movl 16(%rbp), %edx #edx = size
+			subl -8(%rbp), %edx #edx = size-i
+			dec %edx #edx = size-i-1
+			cmp %edx, %edi	
 			je second_loop_end
 			
 			#if(arr[j] > arr[j+1])
-			movl j, %edi
-			movl array(,%edi,4), %eax #%eax = arr[j]
-			incl %edi
-			cmpl array(,%edi,4), %eax #cmp %eax, arr[j+1]
+			movl -16(%rbp), %edi #edi = j 
+			imul $4, %rdi
+			add %rdi, 24(%rbp) #decallage du pointeur
+			movl 24(%rbp), %ecx 
+			movl (%ecx), %eax #%eax = arr[j]
+			addl $4, 24(%rbp)
+			movl 24(%rbp), %ecx
+			cmp (%ecx), %eax #cmp arr[i], arr[j+1]
 			jg switch
 			jmp switch_end
 			switch:
-				movl array(,%edi,4), %eax #eax = arr[j+1]
-				decl %edi
-				lea array(,%edi,4), %ecx #ecx = &arr[j]
-				movl array(,%edi,4), %ebx #ebx = arr[j]
-				movl %eax, (%ecx) #arr[j] = arr[j+1]
-				incl %edi
-				lea array(,%edi,4), %ecx #ecx = &arr[j+1]
-				movl %ebx, (%ecx) #arr[j+1] = arr[j]
+				movl (%ecx), %ebx #%ebx = arr[j+1]
+				movl %eax, (%ecx) #arr[j+1] = arr[j]
+				subl $4, 24(%rbp)
+				movl 24(%rbp), %ecx
+				movl %ebx, (%ecx) #arr[j] = arr[j+1]  
 			switch_end:
-			incl j
+			incq -16(%rbp) #j++
 			jmp second_loop
 		second_loop_end:
-			incl i
+			incq -8(%rbp) #i++
 			jmp first_loop
 			
-	exit:
-		movl $1, %eax
-		int $0x80	
-			
+	return:
+		mov %rbp, %rsp
+		pop %rbp
+		ret	
+		
+exit:
+	movq $1, %rax
+	int $0x80	
